@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block title %}Kayıt Ol{% endblock %}
+
+{% block styles %}
+<style>
+    /* login.html ile aynı stiller */
+    .auth-container {
+        background: linear-gradient(135deg, #131722 0%, #1e222d 100%);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .particles {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+    }
+
+    .auth-card {
+        background: rgba(30, 34, 45, 0.95);
+        border: 1px solid #2B2B3B;
+        border-radius: 12px;
+        padding: 40px;
+        width: 100%;
+        max-width: 450px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        z-index: 2;
+        backdrop-filter: blur(8px);
+    }
+
+    .auth-title {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        background: linear-gradient(90deg, #2962FF 0%, #00C6FF 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        text-align: center;
+    }
+
+    .auth-input {
+        background-color: rgba(19, 23, 34, 0.8);
+        border: 1px solid #2B2B3B;
+        color: white;
+        width: 100%;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        font-size: 16px;
+        transition: all 0.3s;
+    }
+
+    .auth-input:focus {
+        border-color: #2962FF;
+        outline: none;
+    }
+
+    .auth-btn {
+        background: linear-gradient(90deg, #2962FF 0%, #00C6FF 100%);
+        color: white;
+        border: none;
+        width: 100%;
+        padding: 15px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .auth-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(41, 98, 255, 0.4);
+    }
+
+    .auth-link {
+        color: #787B86;
+        text-align: center;
+        display: block;
+        margin-top: 20px;
+        transition: color 0.3s;
+    }
+
+    .auth-link:hover {
+        color: #2962FF;
+        text-decoration: none;
+    }
+
+    .error-message {
+        color: #EF5350;
+        background: rgba(239, 83, 80, 0.1);
+        padding: 10px;
+        border-radius: 6px;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .password-strength {
+        margin-bottom: 15px;
+        font-size: 14px;
+        color: #787B86;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="particles" id="particles-js"></div>
+    <div class="auth-card">
+        <h2 class="auth-title">KAYIT OL</h2>
+        {% if error %}
+        <div class="error-message">{{ error }}</div>
+        {% endif %}
+        <form method="POST" action="{{ url_for('register') }}">
+            <input type="text" class="auth-input" name="username" placeholder="Kullanıcı Adı" required>
+            <input type="email" class="auth-input" name="email" placeholder="E-posta" required>
+            <input type="password" class="auth-input" name="password" placeholder="Şifre" required>
+            <div class="password-strength">Şifre gücü: <span id="strength">Zayıf</span></div>
+            <button type="submit" class="auth-btn">Hesap Oluştur</button>
+        </form>
+        <a href="{{ url_for('login') }}" class="auth-link">Zaten hesabınız var mı? <strong>Giriş yapın</strong></a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Particles.js (login.html ile aynı)
+    document.addEventListener('DOMContentLoaded', function() {
+        particlesJS("particles-js", {
+            "particles": {
+                "number": { "value": 30, "density": { "enable": true, "value_area": 800 } },
+                "color": { "value": "#2962FF" },
+                "opacity": { "value": 1, "random": true },
+                "size": { "value": 2 },
+                "line_linked": { "enable": true, "distance": 100, "color": "#2962FF", "opacity": 1, "width": 1 },
+                "move": { "speed": 1, "direction": "none", "random": true }
+            },
+            "interactivity": {
+                "events": { "onhover": { "enable": false }, "onclick": { "enable": false }, "resize": true }
+            }
+        });
+    });
+
+    // Şifre Güçlülük Kontrolü (Sadece register.html'de)
+    document.querySelector('input[name="password"]').addEventListener('input', function(e) {
+        const strength = document.getElementById('strength');
+        const password = e.target.value;
+        let score = 0;
+        
+        if (password.length >= 8) score += 1;
+        if (password.match(/[A-Z]/)) score += 1;
+        if (password.match(/[0-9]/)) score += 1;
+        if (password.match(/[^A-Za-z0-9]/)) score += 1;
+        
+        strength.textContent = 
+            score < 2 ? "Zayıf" : 
+            score < 4 ? "Orta" : "Güçlü";
+        strength.style.color = 
+            score < 2 ? "#EF5350" : 
+            score < 4 ? "#FFA726" : "#26A69A";
+    });
+</script>
+{% endblock %}

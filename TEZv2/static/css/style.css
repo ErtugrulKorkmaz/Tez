@@ -1,0 +1,52 @@
+/* Temel stil ayarları */
+body {
+    padding-top: 3rem;
+    background-color: #f8f9fa;
+}
+
+.card {
+    border-radius: 10px;
+}
+
+.table-responsive {
+    margin-top: 20px;
+}
+
+/* Navbar özelleştirmesi */
+.navbar {
+    box-shadow: 0 2px 4px rgba(0,0,0,.1);
+}
+
+/* Hata mesajları */
+.alert {
+    margin-bottom: 1rem;
+}
+
+/* style.css */
+.error-message {
+    color: #EF5350;
+    background: rgba(239, 83, 80, 0.1);
+    padding: 10px;
+    border-radius: 6px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.stock-container {
+    padding: 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.back-button {
+    display: inline-block;
+    padding: 0.8rem 1.5rem;
+    background: #2962FF;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    margin-top: 1rem;
+}
+
+.positive { color: #26A69A; }
+.negative { color: #EF5350; }

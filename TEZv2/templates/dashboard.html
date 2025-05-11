@@ -1,0 +1,357 @@
+{% extends "base.html" %}
+{% block title %}Dashboard | TrendViz Pro{% endblock %}
+
+{% block styles %}
+<style>
+:root {
+    --primary: #2962FF;
+    --secondary: #1E88E5;
+    --bg-dark: #0A0E1A;
+    --bg-card: #13182B;
+    --text: #E0E0E0;
+    --text-secondary: #8B95B2;
+    --green: #26A69A;
+    --red: #EF5350;
+    --border: rgba(41,98,255,0.2);
+}
+
+body {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    background: var(--bg-dark);
+    color: var(--text);
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* Arka Plan Efektleri */
+.dynamic-background {
+    position: fixed;
+    width: 200vw;
+    height: 200vh;
+    background: 
+        radial-gradient(circle at 50% 30%, rgba(41, 98, 255, 0.1) 0%, transparent 60%),
+        radial-gradient(circle at 50% 70%, rgba(65, 184, 131, 0.05) 0%, transparent 60%);
+    animation: bgRotate 60s linear infinite;
+    z-index: -1;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+@keyframes bgRotate {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.floating-dots {
+    position: fixed;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    overflow: hidden;
+}
+
+.dot {
+    position: absolute;
+    background: rgba(255,255,255,0.05);
+    border-radius: 50%;
+    animation: float 20s infinite linear;
+}
+
+@keyframes float {
+    0% { transform: translateY(100vh) scale(0.8); opacity: 0; }
+    50% { opacity: 0.3; }
+    100% { transform: translateY(-100vh) scale(1.2); opacity: 0; }
+}
+
+/* Dashboard Stilleri */
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background: rgba(19, 24, 43, 0.8);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    position: relative;
+}
+
+.brand {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.nav-button {
+    background: rgba(41,98,255,0.1);
+    color: var(--primary);
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.3s;
+    border: 1px solid var(--border);
+    justify-content: space-between
+}
+
+.nav-button:hover {
+    background: rgba(41,98,255,0.2);
+    transform: translateY(-1px);
+}
+
+.nav-buttons-container {
+    display: flex;
+    gap: 1rem; /* Butonlar arası boşluk */
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between; /* Brand ile butonları ayırır */
+    align-items: center;
+    /* Diğer stiller aynı kalacak */
+}
+
+.dashboard-container {
+    padding: 2rem;
+    min-height: calc(100vh - 72px);
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+    position: relative;
+}
+
+.dashboard-card {
+    background: var(--bg-card);
+    border-radius: 16px;
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    transition: transform 0.3s, box-shadow 0.3s;
+    backdrop-filter: blur(10px);
+}
+
+.dashboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 32px rgba(41,98,255,0.1);
+}
+
+.card-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--primary);
+}
+
+.stock-list, .sector-list, .live-indexes {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.stock-item, .sector-item, .index-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid rgba(41,98,255,0.1);
+}
+
+.stock-item:last-child, .sector-item:last-child, .index-item:last-child {
+    border-bottom: none;
+}
+
+.stock-symbol {
+    font-weight: 500;
+    color: var(--primary);
+}
+
+.stock-price {
+    font-family: 'Roboto Mono', monospace;
+}
+
+.change-positive {
+    background: rgba(38, 166, 154, 0.15);
+    color: var(--green);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+}
+
+.change-negative {
+    background: rgba(239, 83, 80, 0.15);
+    color: var(--red);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+}
+
+.sector-item {
+    border-left: 4px solid transparent;
+    padding-left: 1rem;
+}
+
+.sector-positive { border-left-color: var(--green); }
+.sector-negative { border-left-color: var(--red); }
+
+@media (max-width: 768px) {
+    .dashboard-container { padding: 1rem; }
+    .dashboard-header { padding: 1rem; }
+    .brand { font-size: 1.25rem; }
+    .nav-button { padding: 0.5rem 1rem; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dynamic-background"></div>
+<div class="floating-dots">
+    <!-- JS ile rastgele noktalar eklenebilir -->
+</div>
+
+<header class="dashboard-header">
+    <div class="brand">TrendViz</div>
+    <div class="nav-buttons-container">
+        <a href="/" class="nav-button">← Anasayfa</a>
+        <a href="/screener" class="nav-button">Screener'a Git →</a>
+    </div>
+</header>
+
+<div class="dashboard-container">
+    <div class="dashboard-grid">
+        <div class="dashboard-card">
+            <h2 class="card-title">📈 Potansiyelli Hisse Senetleri</h2>
+            <ul class="stock-list">
+                <li class="stock-item">
+                    <span class="stock-symbol">GARAN</span>
+                    <span class="stock-price">320.50</span>
+                    <span class="change-positive">+2.45%</span>
+                </li>
+                <li class="stock-item">
+                    <span class="stock-symbol">ASELS</span>
+                    <span class="stock-price">284.00</span>
+                    <span class="change-positive">+1.89%</span>
+                </li>
+                <li class="stock-item">
+                    <span class="stock-symbol">THYAO</span>
+                    <span class="stock-price">135.75</span>
+                    <span class="change-positive">+3.12%</span>
+                </li>
+                <li class="stock-item">
+                    <span class="stock-symbol">KOZAA</span>
+                    <span class="stock-price">45.20</span>
+                    <span class="change-positive">+4.35%</span>
+                </li>
+                <li class="stock-item">
+                    <span class="stock-symbol">SAHOL</span>
+                    <span class="stock-price">25.80</span>
+                    <span class="change-positive">+4.87%</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="dashboard-card">
+            <h2 class="card-title">🚀 Dünün En Çok Yükselenleri</h2>
+            <ul class="stock-list">
+                <li class="stock-item">
+                    <span class="stock-symbol">AKBNK</span>
+                    <span class="stock-price">12.65</span>
+                    <span class="change-positive">+5.23%</span>
+                </li>
+                <li class="stock-item">
+                    <span class="stock-symbol">TCELL</span>
+                    <span class="stock-price">35.40</span>
+                    <span class="change-positive">+6.15%</span>
+                </li>
+                <li class="stock-item">
+                    <span class="stock-symbol">PETKM</span>
+                    <span class="stock-price">18.90</span>
+                    <span class="change-positive">+3.78%</span>
+                </li>
+                <li class="stock-item">
+                    <span class="stock-symbol">SISE</span>
+                    <span class="stock-price">42.10</span>
+                    <span class="change-positive">+5.01%</span>
+                </li>
+                <li class="stock-item">
+                    <span class="stock-symbol">KCHOL</span>
+                    <span class="stock-price">120.75</span>
+                    <span class="change-positive">+2.95%</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="dashboard-card">
+            <h2 class="card-title">🏭 Sektör Performansı</h2>
+            <ul class="sector-list">
+                <li class="sector-item sector-positive">
+                    <span>Teknoloji</span>
+                    <span class="change-positive">+3.2%</span>
+                </li>
+                <li class="sector-item sector-negative">
+                    <span>Enerji</span>
+                    <span class="change-negative">-1.8%</span>
+                </li>
+                <li class="sector-item sector-positive">
+                    <span>Finans</span>
+                    <span class="change-positive">+2.1%</span>
+                </li>
+                <li class="sector-item sector-positive">
+                    <span>İmalat</span>
+                    <span class="change-positive">+1.4%</span>
+                </li>
+                <li class="sector-item sector-negative">
+                    <span>İnşaat</span>
+                    <span class="change-negative">-0.9%</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="dashboard-card">
+            <h2 class="card-title">🌍 Canlı Endeksler</h2>
+            <ul class="live-indexes">
+                <li class="index-item">
+                    <span>BIST 100</span>
+                    <div>
+                        <span class="stock-price">8,450.75</span>
+                        <span class="change-positive">+1.4%</span>
+                    </div>
+                </li>
+                <li class="index-item">
+                    <span>Dolar/TL</span>
+                    <div>
+                        <span class="stock-price">32.15</span>
+                        <span class="change-negative">-0.3%</span>
+                    </div>
+                </li>
+                <li class="index-item">
+                    <span>Altın (ONS)</span>
+                    <div>
+                        <span class="stock-price">1,950.40</span>
+                        <span class="change-positive">+0.8%</span>
+                    </div>
+                </li>
+                <li class="index-item">
+                    <span>Brent Petrol</span>
+                    <div>
+                        <span class="stock-price">85.60</span>
+                        <span class="change-positive">+1.2%</span>
+                    </div>
+                </li>
+                <li class="index-item">
+                    <span>BTC/TRY</span>
+                    <div>
+                        <span class="stock-price">1,020,450</span>
+                        <span class="change-negative">-2.1%</span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

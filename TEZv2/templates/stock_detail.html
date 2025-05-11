@@ -1,0 +1,413 @@
+{% extends "base.html" %}
+{% block title %}{{ symbol_for_js|upper if symbol_for_js else 'Hisse Detayı' }} | TrendViz{% endblock %}
+
+{% block styles %}
+<style>
+    /* YENİ RENK PALETİ */
+    :root {
+        --navy-900: #0a192f;    /* Ana koyu navy */
+        --navy-800: #172a45;    /* Orta ton */
+        --navy-700: #2a4a6e;    /* Açık navy */
+        --accent-teal: #64ffda; /* Parlak teal (vurgu renk) */
+        --accent-coral: #ff6b6b; /* Coral (ikincil vurgu) */
+        --text-primary: #ccd6f6; /* Ana metin */
+        --text-secondary: #8892b0; /* İkincil metin */
+        --border-navy: #1f2d48;   /* Çerçeve renk */
+    }
+
+    .stock-detail-container {
+        background: var(--navy-900);
+        color: var(--text-primary);
+        min-height: calc(100vh - 70px);
+        padding: 2rem 1.5rem;
+    }
+
+    .stock-header {
+        border-bottom: 1px solid var(--border-navy);
+        padding-bottom: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stock-header h1 {
+        font-size: 2.8rem;
+        color: var(--accent-teal);
+        margin-bottom: 0.5rem;
+        letter-spacing: -0.05em;
+    }
+
+    .stock-header p { /* Şirket Adı */
+        font-size: 1.2rem;
+        color: var(--text-secondary);
+        font-weight: 300;
+    }
+
+    .data-point {
+        background: var(--navy-800);
+        border: 1px solid var(--border-navy);
+        border-radius: 10px;
+        padding: 1rem;
+        transition: transform 0.2s, box-shadow 0.2s;
+        min-height: 80px; 
+        display: flex; 
+        flex-direction: column; 
+        justify-content: center; 
+    }
+
+    .data-point:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+
+    .data-point .label {
+        color: var(--text-secondary);
+        font-size: 0.75rem; 
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 0.25rem; 
+    }
+
+    .data-point .value {
+        color: var(--text-primary);
+        font-size: 1.2rem; 
+        font-weight: 600;
+        line-height: 1.3; 
+    }
+
+    .value.change-positive { color: #4cd08e; }
+    .value.change-negative { color: var(--accent-coral); }
+
+    .chart-container {
+        background: var(--navy-800);
+        border: 1px solid var(--border-navy);
+        border-radius: 10px;
+        height: 420px; 
+        position: relative;
+        padding: 0.75rem; 
+        display: flex; 
+        justify-content: center; 
+        align-items: center; 
+        color: var(--text-secondary); /* Placeholder metin için */
+    }
+
+    .stock-description {
+        background: var(--navy-800);
+        border: 1px solid var(--border-navy);
+        border-radius: 10px;
+        padding: 1rem; 
+        margin-top: 1.5rem; 
+    }
+
+    .stock-description h3 {
+        color: var(--accent-teal);
+        margin-bottom: 1rem;
+        font-size: 1.4rem;
+        border-bottom: 1px solid var(--border-navy);
+        padding-bottom: 0.5rem;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .data-grid {
+        animation: fadeIn 0.6s ease-out;
+    }
+
+    .main-content-area {
+        display: grid;
+        grid-template-columns: 1fr 2.2fr; 
+        gap: 1.5rem;
+        align-items: start; 
+    }
+
+    .data-and-info-section h3 { 
+        font-size: 1.1rem;
+        color: var(--text-secondary); 
+        margin-bottom: 0.75rem; 
+        padding-bottom: 0.25rem;
+        border-bottom: 1px solid var(--border-navy);
+        font-weight: 500;
+    }
+    
+    .data-grid { 
+        display: grid; 
+        grid-template-columns: repeat(2, 1fr); 
+        gap: 0.75rem; 
+    }
+
+    /* ===== MOBİL UYUMLULUK ===== */
+    @media (max-width: 992px) { 
+        .main-content-area {
+            grid-template-columns: 1fr; 
+        }
+        .chart-section {
+            margin-top: 1.5rem; /* Grafik alta geçtiğinde üstüne boşluk */
+        }
+        .data-grid {
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); 
+        }
+    }
+
+    @media (max-width: 768px) {
+        .stock-header h1 { font-size: 2rem; }
+        .chart-container { height: 350px; }
+    }
+
+    @media (max-width: 576px) {
+        .stock-detail-container { padding: 1rem; }
+        .stock-header h1 { font-size: 1.8rem; }
+        .stock-header p { font-size: 1rem; }
+        .data-grid { grid-template-columns: repeat(2, 1fr); }
+        .data-point .value { font-size: 1rem; }
+        .chart-container { height: 300px; }
+        .data-and-info-section h3 { font-size: 1rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="stock-detail-container">
+    <div class="stock-header">
+        <h1 id="stock-symbol-placeholder">{{ symbol_for_js|upper if symbol_for_js else 'Yükleniyor...' }}</h1>
+        <p id="stock-name-placeholder">Şirket adı yükleniyor...</p>
+    </div>
+
+    <div class="main-content-area">
+        <div class="data-and-info-section"> 
+            <h3>Özet Veriler ve Tahminler</h3>
+            <div class="data-grid">
+                <div class="data-point">
+                    <span class="label">Fiyat</span>
+                    <span class="value" id="stock-price-placeholder">Yükleniyor...</span>
+                </div>
+                <div class="data-point">
+                    <span class="label">Günlük Değişim</span>
+                    <span class="value" id="stock-change-placeholder">Yükleniyor...</span>
+                </div>
+                <div class="data-point">
+                    <span class="label">Hacim</span>
+                    <span class="value" id="stock-volume-placeholder">Yükleniyor...</span>
+                </div>
+                <div class="data-point">
+                    <span class="label">Piyasa Değeri</span>
+                    <span class="value" id="stock-marketcap-placeholder">Yükleniyor...</span>
+                </div>
+                <div class="data-point">
+                    <span class="label">RSI</span>
+                    <span class="value" id="stock-rsi-placeholder">Yükleniyor...</span>
+                </div>
+                <div class="data-point">
+                    <span class="label">Pivot</span>
+                    <span class="value" id="stock-pivot-placeholder">Yükleniyor...</span>
+                </div>
+                <div class="data-point">
+                    <span class="label">Yarının Tahmini Düşük</span>
+                    <span class="value" id="tahmin-dusuk-fiyat-placeholder">Yükleniyor...</span>
+                </div>
+                <div class="data-point">
+                    <span class="label">Yarının Tahmini Yüksek</span>
+                    <span class="value" id="tahmin-yuksek-fiyat-placeholder">Yükleniyor...</span>
+                </div>
+                </div>
+        </div>
+
+        <div class="chart-section">
+            <h3>Fiyat Grafiği</h3>
+            <div id="stock-chart-container" class="chart-container">
+                Grafik verisi yükleniyor...
+            </div>
+        </div>
+    </div>
+
+    <div class="stock-description" id="stock-description-container" style="display:none;">
+        <h3>Şirket Hakkında / Model Özellikleri</h3>
+        <p id="stock-description-placeholder">Açıklama yükleniyor...</p>
+        <div id="model-features-placeholder" style="margin-top:1rem; font-size:0.9rem; color:var(--text-secondary);"></div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', async function() { // Fonksiyonu async yaptık
+    let stockSymbolFromFlask = null;
+    {% if symbol_for_js %}
+    stockSymbolFromFlask = {{ symbol_for_js|tojson }};
+    {% else %}
+    console.warn("Flask'tan 'symbol_for_js' değişkeni gelmedi veya None olarak ayarlandı.");
+    {% endif %}
+
+    // Placeholder elementlerini seç
+    const stockNamePlaceholder = document.getElementById('stock-name-placeholder');
+    const stockPricePlaceholder = document.getElementById('stock-price-placeholder');
+    const stockChangePlaceholder = document.getElementById('stock-change-placeholder');
+    const stockVolumePlaceholder = document.getElementById('stock-volume-placeholder');
+    const stockMarketCapPlaceholder = document.getElementById('stock-marketcap-placeholder');
+    const stockRsiPlaceholder = document.getElementById('stock-rsi-placeholder');
+    const stockPivotPlaceholder = document.getElementById('stock-pivot-placeholder');
+    const stockDescriptionContainer = document.getElementById('stock-description-container');
+    const stockDescriptionPlaceholder = document.getElementById('stock-description-placeholder');
+    const modelFeaturesPlaceholder = document.getElementById('model-features-placeholder');
+    const tahminDusukFiyatPlaceholder = document.getElementById('tahmin-dusuk-fiyat-placeholder');
+    const tahminYuksekFiyatPlaceholder = document.getElementById('tahmin-yuksek-fiyat-placeholder');
+    const stockChartContainer = document.getElementById('stock-chart-container');
+
+    function updatePlaceholder(element, value, unit = '', toFixedDigits = null, isChange = false) {
+        if (!element) return;
+        if (value !== undefined && value !== null && value !== "") {
+            let displayValue = value;
+            if (toFixedDigits !== null && typeof value === 'number') {
+                displayValue = parseFloat(value).toFixed(toFixedDigits);
+            }
+            if (isChange && typeof value === 'number') {
+                element.textContent = `${value >= 0 ? '+' : ''}${displayValue}%`;
+                element.classList.toggle('change-positive', value >= 0);
+                element.classList.toggle('change-negative', value < 0);
+            } else {
+                element.textContent = `${displayValue}${unit}`;
+            }
+        } else {
+            element.textContent = 'N/A';
+            if (isChange) { // Değişim için class'ları temizle
+                element.classList.remove('change-positive', 'change-negative');
+            }
+        }
+    }
+    
+    function displayError(message = "Bir hata oluştu.") {
+        stockNamePlaceholder.textContent = message;
+        [stockPricePlaceholder, stockChangePlaceholder, stockVolumePlaceholder, 
+         stockMarketCapPlaceholder, stockRsiPlaceholder, stockPivotPlaceholder, 
+         tahminDusukFiyatPlaceholder, tahminYuksekFiyatPlaceholder].forEach(el => { if(el) el.textContent = '-';});
+        if(stockChartContainer) stockChartContainer.textContent = 'Veri yüklenemedi.';
+        if(stockDescriptionPlaceholder) stockDescriptionPlaceholder.textContent = '-';
+        if(modelFeaturesPlaceholder) modelFeaturesPlaceholder.textContent = '-';
+
+    }
+
+    if (stockSymbolFromFlask) {
+        document.getElementById('stock-symbol-placeholder').textContent = stockSymbolFromFlask.toUpperCase();
+        document.title = `${stockSymbolFromFlask.toUpperCase()} Detay | TrendViz`;
+
+        // === API ENDPOINT'LERİ (ARKADAŞININ API'SİNE GÖRE AYARLA) ===
+        // const API_BASE_URL = "http://localhost:8000"; // Örnek
+        const API_BASE_URL = ""; // Aynı sunucudaysa boş
+        const API = {
+            stockInfo: `${API_BASE_URL}/api/stocks/${encodeURIComponent(stockSymbolFromFlask)}`,
+            prediction: `${API_BASE_URL}/api/stocks/prediction/${encodeURIComponent(stockSymbolFromFlask)}`,
+            hourlyData: `${API_BASE_URL}/api/stocks/saatlik-data/${encodeURIComponent(stockSymbolFromFlask)}`,
+            modelFeatures: `${API_BASE_URL}/api/stocks/model-features/${encodeURIComponent(stockSymbolFromFlask)}`
+        };
+
+        try {
+            const [infoResponse, predictionResponse, hourlyDataResponse, modelFeaturesResponse] = await Promise.all([
+                fetch(API.stockInfo),
+                fetch(API.prediction),
+                fetch(API.hourlyData),
+                fetch(API.modelFeatures)
+            ]);
+
+            // Yanıtları kontrol et ve JSON'a çevir
+            const processResponse = async (response, apiName) => {
+                if (!response.ok) {
+                    let errorMsg = `API isteği (${apiName}) başarısız: ${response.status}`;
+                    try {
+                        const errData = await response.json();
+                        errorMsg = errData.detail || errData.message || errorMsg; 
+                    } catch(e) { /* JSON parse hatası olursa orijinal mesaj kalsın */ }
+                    console.error(errorMsg); // Hata detayını konsola yaz
+                    return { error: true, message: `${apiName} verisi alınamadı.` }; 
+                }
+                try {
+                    return await response.json();
+                } catch (e) {
+                    console.error(`${apiName} JSON parse hatası: `, e);
+                    return { error: true, message: `${apiName} verisi hatalı formatta.` };
+                }
+            };
+
+            const stockData = await processResponse(infoResponse, "Temel Bilgiler");
+            const predictionData = await processResponse(predictionResponse, "Tahminler");
+            const chartRawData = await processResponse(hourlyDataResponse, "Grafik Verisi");
+            const featuresData = await processResponse(modelFeaturesResponse, "Model Özellikleri");
+            
+            // Temel Hisse Bilgileri (Varsayılan alan adları, API'ye göre GÜNCELLE!)
+            if (!stockData.error) {
+                updatePlaceholder(stockNamePlaceholder, stockData.name || stockData.company_name); // API'de hangisi varsa
+                updatePlaceholder(stockPricePlaceholder, stockData.price, ' TL', 2);
+                updatePlaceholder(stockChangePlaceholder, stockData.change_percentage || stockData.change, '', 2, true); // API'de hangisi varsa
+                updatePlaceholder(stockVolumePlaceholder, stockData.volume_text || stockData.volume); // API'de hangisi varsa
+                updatePlaceholder(stockMarketCapPlaceholder, stockData.market_cap_text || stockData.market_cap); // API'de hangisi varsa
+                updatePlaceholder(stockRsiPlaceholder, stockData.rsi, '', 1);
+                updatePlaceholder(stockPivotPlaceholder, stockData.pivot, '', 2);
+                // Şirket açıklaması da bu endpoint'ten gelebilir
+                if (stockData.description) {
+                    stockDescriptionPlaceholder.textContent = stockData.description;
+                    stockDescriptionContainer.style.display = 'block';
+                }
+            } else {
+                updatePlaceholder(stockNamePlaceholder, stockData.message); // Hata mesajını göster
+            }
+
+            // Tahmin Verileri (Varsayılan alan adları, API'ye göre GÜNCELLE!)
+            if (!predictionData.error) {
+                updatePlaceholder(tahminDusukFiyatPlaceholder, predictionData.tahmin_dusuk || predictionData.low_prediction, ' TL', 2); // API'de hangisi varsa
+                updatePlaceholder(tahminYuksekFiyatPlaceholder, predictionData.tahmin_yuksek || predictionData.high_prediction, ' TL', 2); // API'de hangisi varsa
+            } else {
+                updatePlaceholder(tahminDusukFiyatPlaceholder, predictionData.message);
+                updatePlaceholder(tahminYuksekFiyatPlaceholder, '');
+            }
+            
+            // Model Özellikleri Verisi (Varsayılan alan adları, API'ye göre GÜNCELLE!)
+            if (!featuresData.error) {
+                // featuresData'nın nasıl bir yapıda olduğuna bağlı olarak gösterim şeklini ayarla.
+                // Örneğin, bir obje ise:
+                let featuresHtml = "";
+                if (typeof featuresData === 'object' && !Array.isArray(featuresData)) {
+                    for (const key in featuresData) {
+                        // 'symbol' veya 'name' gibi zaten başka yerde gösterilenleri atlayabiliriz.
+                        if (featuresData.hasOwnProperty(key) && key.toLowerCase() !== 'symbol' && key.toLowerCase() !== 'name' && key.toLowerCase() !== 'description') {
+                             featuresHtml += `<strong>${key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}:</strong> ${featuresData[key]}<br>`;
+                        }
+                    }
+                } else if (typeof featuresData.description === 'string' && !stockData.description) { // Eğer ana endpoint'te açıklama yoksa buradan al
+                     stockDescriptionPlaceholder.textContent = featuresData.description;
+                     stockDescriptionContainer.style.display = 'block';
+                } else {
+                    featuresHtml = JSON.stringify(featuresData, null, 2); // Ham JSON olarak göster (test için)
+                }
+                modelFeaturesPlaceholder.innerHTML = featuresHtml || "Ek özellik bulunamadı.";
+                if (featuresHtml || (featuresData.description && !stockData.description)) {
+                     stockDescriptionContainer.style.display = 'block'; // Ana açıklama yoksa ve buradan geldiyse göster
+                }
+
+            } else {
+                 modelFeaturesPlaceholder.textContent = featuresData.message;
+            }
+
+
+            // Grafik Verisi
+            if (!chartRawData.error && stockChartContainer) {
+                stockChartContainer.textContent = ''; // "Yükleniyor" yazısını temizle
+                console.log("Grafik için saatlik veri:", chartRawData);
+                // BURAYA GRAFİK KÜTÜPHANENİ ENTEGRE EDECEKSİN
+                // renderMyChart(stockChartContainer, chartRawData); // Örneğin
+                stockChartContainer.textContent = 'Grafik kütüphanesi entegre edilecek. Veri konsolda.';
+            } else if (stockChartContainer) {
+                stockChartContainer.textContent = chartRawData.message || 'Grafik verisi alınamadı.';
+            }
+
+        } catch (error) {
+            console.error("API istekleri sırasında genel bir hata oluştu:", error);
+            displayError(error.message || "Veriler yüklenirken bir sorun oluştu.");
+        }
+
+    } else {
+        displayError("Hisse sembolü bulunamadı. Lütfen sayfayı yeniden yükleyin veya bir hisse seçin.");
+        document.getElementById('stock-symbol-placeholder').textContent = "Hisse Belirtilmedi";
+    }
+});
+</script>
+{% endblock %}
