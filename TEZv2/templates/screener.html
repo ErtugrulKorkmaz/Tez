@@ -55,24 +55,24 @@ body {
 }
 
 #filters-container {
-    margin: 1.5rem 0; /* Üstteki header ile aralığı biraz azalttım */
+    margin: 1.5rem 0; 
     display: flex;
     flex-wrap: wrap;
-    gap: 0.75rem; /* Filtre etiketleri arası boşluk */
+    gap: 0.75rem; 
     align-items: center;
 }
 
 .filter-tag {
     background: var(--bg-panel);
     border: 1px solid var(--border);
-    border-radius: 20px; /* Daha yuvarlak kenarlar */
-    padding: 0.6rem 1.2rem; /* Padding ayarı */
+    border-radius: 20px; 
+    padding: 0.6rem 1.2rem; 
     cursor: pointer;
     transition: all 0.2s ease-in-out;
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    font-size: 0.85rem; /* Font boyutu */
+    font-size: 0.85rem; 
     color: var(--text-secondary);
 }
 
@@ -84,12 +84,12 @@ body {
 
 .filter-tag.active {
     border-color: var(--primary);
-    background: var(--primary); /* Aktifken arkaplanı ana renk yapalım */
-    color: var(--bg-dark); /* Aktifken yazı rengi */
+    background: var(--primary); 
+    color: var(--bg-dark); 
     box-shadow: 0 3px 10px rgba(41,98,255,0.2);
 }
 .filter-tag.active:hover {
-    background: #2050D8; /* Hover için biraz daha koyu primary */
+    background: #2050D8; 
 }
 
 
@@ -97,7 +97,7 @@ body {
     margin-left: auto; 
     color: var(--text-secondary);
     font-size: 0.9rem;
-    padding: 0.6rem 0; /* Dikey hizalama için */
+    padding: 0.6rem 0; 
 }
 
 
@@ -113,14 +113,14 @@ body {
 
 .stock-table th, 
 .stock-table td {
-    padding: 0.9rem 1.2rem; /* Padding'i biraz azalttım */
+    padding: 0.9rem 1.2rem; 
     border-bottom: 1px solid var(--border);
     text-align: left;
-    font-size: 0.9rem; /* Tablo içi font boyutu */
+    font-size: 0.9rem; 
 }
 
 .stock-table th {
-    background: rgba(19, 24, 43, 0.7); /* Başlık arkaplanını biraz daha koyu */
+    background: rgba(19, 24, 43, 0.7); 
     color: var(--primary);
     font-weight: 600;
     font-size: 0.8rem;
@@ -171,6 +171,7 @@ body {
     }
     #filters-container {
         gap: 0.5rem;
+        justify-content: center;
     }
     .filter-tag {
         padding: 0.5rem 1rem;
@@ -237,16 +238,16 @@ body {
 
 @media (max-width: 768px) {
     .screener-header {
-        padding: 1rem; /* Mobilde header padding'i */
+        padding: 1rem; 
     }
     .screener-header h1 {
-        font-size: 1.5rem; /* Mobilde başlık fontu */
+        font-size: 1.5rem; 
     }
     .header-buttons {
-        margin-top: 0.5rem; /* Butonlar ve başlık arası boşluk */
+        margin-top: 0.5rem; 
     }
     .nav-button {
-        padding: 0.6rem 1rem; /* Mobilde buton padding'i */
+        padding: 0.6rem 1rem; 
         font-size: 0.85rem;
     }
 }
@@ -282,7 +283,7 @@ body {
             </tr>
         </thead>
         <tbody id="stock-list">
-            <tr><td colspan="6" style="text-align:center;">Hisseler yükleniyor...</td></tr>
+            <tr><td colspan="6" style="text-align:center; color:var(--text-secondary);">Hisseler yükleniyor...</td></tr>
         </tbody>
     </table>
 
@@ -297,24 +298,23 @@ body {
 {% block scripts %}
 <script>
 let allFetchedStocks = []; 
-let currentlyDisplayedStocks = []; // Sayfalama için kullanılacak, API'den gelen filtrelenmiş liste
+let currentlyDisplayedStocks = []; 
 let currentPage = 1;
 const itemsPerPage = 10;
-let activeApiFilters = {}; // API'ye gönderilecek filtreleri {key: value} şeklinde tutar
+let activeApiFilters = {}; 
 
 // === API ENDPOINT'LERİ (ARKADAŞININ API'SİNE GÖRE AYARLA) ===
-// Eğer API'n farklı bir sunucudaysa (örn: http://localhost:8000), base URL'i buraya ekle.
-// const API_BASE_URL = "http://localhost:8000"; // Örnek Base URL
-const API_BASE_URL = ""; // Aynı sunucudaysa boş bırakılabilir.
+// const API_BASE_URL = "http://localhost:8000"; // API farklı sunucudaysa
+const API_BASE_URL = ""; // Aynı sunucudaysa boş bırakılabilir
 const API_ENDPOINTS = {
-    // Bu endpoint'in filtresizken tümünü, query ile filtrelenmişleri getirdiğini varsayıyoruz.
     stocks: `${API_BASE_URL}/api/stocks/filtered` 
 };
 
 document.getElementById('stock-list').addEventListener('click', (e) => {
     const row = e.target.closest('tr');
-    if (row && row.dataset.symbol) {
+    if (row && row.dataset.symbol) { 
         const symbol = row.dataset.symbol;
+        // Flask'ta 'stock_detail_page' adında bir route ve bu route'un 'hisse_kodu' parametresi aldığını varsayıyoruz.
         window.location.href = `{{ url_for('stock_detail_page', hisse_kodu='__SYMBOL__') }}`.replace('__SYMBOL__', encodeURIComponent(symbol));
     }
 });
@@ -336,26 +336,20 @@ async function fetchScreenerStocks() {
     document.getElementById('page-info').textContent = 'Sayfa 0 / 0';
     updatePaginationButtonsState(0);
 
-
     let apiUrl = API_ENDPOINTS.stocks;
     const queryString = buildApiQueryString();
     if (queryString) {
         apiUrl = `${API_ENDPOINTS.stocks}?${queryString}`;
     }
 
-    console.log("API İsteği:", apiUrl); // Hata ayıklama için
+    console.log("API İsteği:", apiUrl); 
 
     try {
         const response = await fetch(apiUrl); 
         if (!response.ok) {
-            // API'den gelen hata mesajını göstermeye çalışalım (eğer varsa)
-            let errorData;
-            try {
-                errorData = await response.json();
-            } catch (e) {
-                errorData = { message: `Sunucudan beklenmedik yanıt: ${response.status}` };
-            }
-            throw new Error(errorData.message || `API isteği başarısız: ${response.status} (${apiUrl})`);
+            let errorData = { message: `API isteği başarısız: ${response.status} (${apiUrl})`};
+            try { errorData = await response.json(); } catch (e) { /* ignore */ }
+            throw new Error(errorData.detail || errorData.message); // API'den gelen 'detail' veya 'message' alanını kullan
         }
         
         const fetchedData = await response.json();
@@ -367,7 +361,7 @@ async function fetchScreenerStocks() {
             allFetchedStocks = fetchedData;
         }
         
-        currentlyDisplayedStocks = [...allFetchedStocks]; // Filtrelenmiş tüm listeyi al
+        currentlyDisplayedStocks = [...allFetchedStocks]; 
         currentPage = 1; 
         updateTable(); 
     } catch (error) {
@@ -387,23 +381,24 @@ function updateTable() {
     
     const totalItems = currentlyDisplayedStocks.length;
     const totalPages = Math.ceil(totalItems / itemsPerPage);
-    currentPage = Math.max(1, Math.min(currentPage, totalPages || 1)); // Geçerli sayfa aralığında kalmasını sağla
+    currentPage = Math.max(1, Math.min(currentPage, totalPages || 1)); 
 
     const start = (currentPage - 1) * itemsPerPage;
     const end = start + itemsPerPage;
     const paginatedItems = currentlyDisplayedStocks.slice(start, end);
     
-    if (paginatedItems.length === 0 && totalItems > 0) { // Eğer sayfa boşsa ama veri varsa (örn: son sayfadan sonraki sayfa istendi)
+    if (paginatedItems.length === 0 && totalItems > 0) {
          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-secondary);">Bu sayfada gösterilecek hisse yok.</td></tr>';
     } else {
         paginatedItems.forEach(stock => {
             // === BU ALAN ADLARINI API'DEN GELEN GERÇEK VERİ YAPISINA GÖRE GÜNCELLE! ===
-            const symbol = stock.symbol || 'N/A'; // Varsayılan API alanı: symbol
-            const price = (stock.price !== undefined && stock.price !== null) ? parseFloat(stock.price).toFixed(2) : 'N/A'; // Varsayılan API alanı: price
-            const changePercent = (stock.change !== undefined && stock.change !== null) ? parseFloat(stock.change) : null; // Varsayılan API alanı: change
-            const volume = stock.volume || 'N/A'; // Varsayılan API alanı: volume
-            const rsi = (stock.rsi !== undefined && stock.rsi !== null) ? parseFloat(stock.rsi).toFixed(1) : 'N/A'; // Varsayılan API alanı: rsi
-            const pivot = (stock.pivot !== undefined && stock.pivot !== null) ? parseFloat(stock.pivot).toFixed(2) : 'N/A'; // Varsayılan API alanı: pivot
+            // Örneğin API'den gelen alan adları: stock_code, current_price, daily_change_percent, transaction_volume, rsi_value, pivot_level
+            const symbol = stock.symbol || 'N/A'; 
+            const price = (stock.price !== undefined && stock.price !== null) ? parseFloat(stock.price).toFixed(2) : 'N/A'; 
+            const changePercent = (stock.change !== undefined && stock.change !== null) ? parseFloat(stock.change) : null; 
+            const volume = stock.volume || 'N/A'; 
+            const rsi = (stock.rsi !== undefined && stock.rsi !== null) ? parseFloat(stock.rsi).toFixed(1) : 'N/A'; 
+            const pivot = (stock.pivot !== undefined && stock.pivot !== null) ? parseFloat(stock.pivot).toFixed(2) : 'N/A'; 
             // ========================================================================
 
             let changeClass = '';
@@ -455,7 +450,7 @@ document.querySelectorAll('.filter-tag').forEach(tag => {
     tag.addEventListener('click', () => {
         tag.classList.toggle('active');
         
-        const filterType = tag.dataset.filterType; // 'single', 'range', 'boolean'
+        const filterType = tag.dataset.filterType;
         const isActive = tag.classList.contains('active');
 
         if (filterType === "single") {
@@ -476,23 +471,16 @@ document.querySelectorAll('.filter-tag').forEach(tag => {
             }
         } else if (filterType === "boolean") {
             const key = tag.dataset.filterKey;
-            const value = tag.dataset.filterValue; // "true" veya "false" string olarak
-            if (isActive) activeApiFilters[key] = (value === "true"); // API boolean bekliyorsa
+            const value = tag.dataset.filterValue; 
+            if (isActive) activeApiFilters[key] = (value === "true"); 
             else delete activeApiFilters[key];
         }
         
-        fetchScreenerStocks(); // API'yi yeni filtrelerle çağır
+        fetchScreenerStocks(); 
     });
 });
 
-// İlk Yükleme
 document.addEventListener('DOMContentLoaded', () => {
-    // URL'den tıklama için `url_for` kullanımı
-    // (stock_detail_page route'unun app.py'de tanımlı olduğunu varsayıyoruz)
-    // Örnek: <a href="{{ url_for('stock_detail_page', hisse_kodu='GARAN') }}">GARAN</a>
-    // JavaScript'te ise yönlendirmeyi aşağıdaki gibi yapıyoruz:
-    // document.getElementById('stock-list').addEventListener('click', (e) => { ... });
-    
     fetchScreenerStocks(); 
 });
 </script>
